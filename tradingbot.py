@@ -7,7 +7,7 @@ import sys
 from poloniex import poloniex
 def main(argv):
 	period = float(raw_input("Period(Delay Between Each Check in seconds):	"))
-	currency = raw_input("Coin(Example: DCR):	")
+	currency = raw_input("Coin(Example: ETH):	")
 	minArb=float(raw_input("Minimum Arbitrage %. Recomended to set above 100.5 as fees from both sides add up to 0.5%.	"))
 	trade = 'BTC'
 	tradePlaced = False
@@ -43,24 +43,24 @@ def main(argv):
 			arbitrage=bittrexBid/poloAsk
 			if ((arbitrage*100)>minArb):
 				print "Buy from poloAsk, sell to bittrexBid. Profit: " + str(arbitrage*100)
-				#sellbook=1
+				sellbook=conn.returnOrderBook(pair)["asks"][0][1]
 				buybook=api.getorderbook(market, "sell")[0]["Quantity"]
 				if (sellbook<buybook):
 					api.selllimit(market, sellbook, bittrexBid)
 					orderNumber=conn.sell(pair, poloAsk, sellbook)
-					print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(sellbook, currency, bittrexbid, sellbook, currency, poloAsk)
+					print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(sellbook, currency, bittrexBid, sellbook, currency, poloAsk)
 				elif (buybook<sellbook):
 					api.selllimit(market, buybook, bittrexBid)
 					orderNumber=conn.sell(pair, poloAsk, buybook)
-					print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(buybook, currency, bittrexbid, buybook, currency, poloAsk)
+					print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(buybook, currency, bittrexBid, buybook, currency, poloAsk)
 			#else:
 			#print "Arbitrage found but less than min arb."
 		elif(bittrexAsk<poloBid):
 			arbitrage=poloBid/bittrexAsk
 			if ((arbitrage*100)>minArb):
 				print "Buy from Bittrex Ask, sell to poloBid. Profit: " + str(arbitrage*100)
+				buybook=conn.returnOrderBook(pair)["bids"][0][1]
 				sellbook=api.getorderbook(market, "sell")[0]["Quantity"]
-				#buybook=1
 				if (sellbook<buybook):
 					api.buylimit(market, sellbook, bittrexAsk)
 					orderNumber=conn.sell(pair, poloBid, sellbook)
