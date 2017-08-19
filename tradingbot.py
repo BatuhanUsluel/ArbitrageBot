@@ -39,20 +39,29 @@ def main(argv):
 		bittrexBid = summary[0]['Bid']
 		print "Bid @ Bittrex:	" + str(bittrexBid)
 
+		#Balances for currency
+		bittrexBalance=api.getbalance(currency)
+		allpolobalance=conn.apiquery('returnBalances')
+		poloniexBalance=allpolobalance[currency]
+
+
+		#Balances for BTC
+		bittrexBTCBalance=api.getbalance(btc)
+		poloniexBTCBalance=allpolobalance[btc]
+
+
 		if (poloAsk<bittrexBid):
 			arbitrage=bittrexBid/poloAsk
 			if ((arbitrage*100)>minArb):
 				print "Buy from poloAsk, sell to bittrexBid. Profit: " + str(arbitrage*100)
 				sellbook=conn.returnOrderBook(pair)["asks"][0][1]
 				buybook=api.getorderbook(market, "sell")[0]["Quantity"]
-				if (sellbook<buybook):
-					api.selllimit(market, sellbook, bittrexBid)
-					orderNumber=conn.sell(pair, poloAsk, sellbook)
-					print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(sellbook, currency, bittrexBid, sellbook, currency, poloAsk)
-				elif (buybook<sellbook):
-					api.selllimit(market, buybook, bittrexBid)
-					orderNumber=conn.sell(pair, poloAsk, buybook)
-					print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(buybook, currency, bittrexBid, buybook, currency, poloAsk)
+				lowestbook=min(sellbook, buybook)
+				#polocost=poloAsk*sellbook
+				api.selllimit(market, lowestbook, bittrexBid)
+				orderNumber=conn.sell(pair, poloAsk, lowestbook)
+				print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(lowestbook, currency, bittrexBid, lowestbook, currency, poloAsk)
+
 			#else:
 			#print "Arbitrage found but less than min arb."
 		elif(bittrexAsk<poloBid):
@@ -61,14 +70,11 @@ def main(argv):
 				print "Buy from Bittrex Ask, sell to poloBid. Profit: " + str(arbitrage*100)
 				buybook=conn.returnOrderBook(pair)["bids"][0][1]
 				sellbook=api.getorderbook(market, "sell")[0]["Quantity"]
-				if (sellbook<buybook):
-					api.buylimit(market, sellbook, bittrexAsk)
-					orderNumber=conn.sell(pair, poloBid, sellbook)
-					print "Selling {0} {1} @ PoloBid @ {2} and Buying {3} {4} @ BittrexAsk @ {5}".format(sellbook, currency, poloBid, sellbook, currency, bittrexAsk)
-				elif (buybook<sellbook):
-					api.buylimit(market, buybook, bittrexAsk)
-					orderNumber=conn.sell(pair, poloBid, buybook)
-                                        print "Selling {0} {1} @ PoloBid @ {2} and Buying {3} {4} @ BittrexAsk @ {5}".format(buybook, currency, poloBid, buybook, currency, bittrexAsk)
+				lowestbook=min(sellbook, buybook)
+				api.buylimit(market, lowestbook, bittrexAsk)
+				orderNumber=conn.sell(pair, poloBid, lowestbook)
+				print "Selling {0} {1} @ PoloBid @ {2} and Buying {3} {4} @ BittrexAsk @ {5}".format(lowestbook, currency, poloBid, lowestbook, currency, bittrexAsk)
+
 #			else:
 #				print "Arbitrage found but less than min arb."
 		time.sleep(period)
