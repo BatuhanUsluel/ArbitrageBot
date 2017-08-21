@@ -15,7 +15,7 @@ def main(argv):
 	tradePlaced = False
 
 	#Bittrex API Keys
-	api = bittrex('BITTREXAPIKEY','BITTREXAPISECRET')
+	api = bittrex('APIKEY','APISECRET')
 
 	#Bittrex market
 	market= '{0}-{1}'.format(trade,currency)
@@ -24,7 +24,7 @@ def main(argv):
 	pair= '{0}_{1}'.format(trade,currency)
 
 	#Polo API Keys
-	conn= poloniex('POLONIEXAPIKEY','POLONIEXAPISECRET')
+	conn= poloniex('APIKEY','APISECRET')
 
 	while True:
 
@@ -71,10 +71,12 @@ def main(argv):
 				if ((tradesize*poloAsk)>poloniexBTCBalance):
 					tradesize=poloniexBTCBalance/poloAsk
 
-				#Execute order
-				api.selllimit(market, tradesize, bittrexBid)
-				orderNumber=conn.sell(pair, poloAsk, tradesize)
-				print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(tradesize, currency, bittrexBid, tradesize, currency, poloAsk)
+				#Check if above min order size
+				if ((tradesize*bittrexBid)>0.0005001):
+					#Execute order
+					api.selllimit(market, tradesize, bittrexBid)
+					orderNumber=conn.sell(pair, poloAsk, tradesize)
+					print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(tradesize, currency, bittrexBid, tradesize, currency, poloAsk)
 
 		#Sell to polo, Buy from Bittrex
 		elif(bittrexAsk<poloBid):
@@ -95,10 +97,12 @@ def main(argv):
 				if((tradesize*bittrexAsk)>bittrexBTCBalance):
 					tradesize=bittrexBTCBalance/bittrexAsk
 
-				#Execute order
-				api.buylimit(market, tradesize, bittrexAsk)
-				orderNumber=conn.sell(pair, poloBid, tradesize)
-				print "Selling {0} {1} @ PoloBid @ {2} and Buying {3} {4} @ BittrexAsk @ {5}".format(tradesize, currency, poloBid, tradesize, currency, bittrexAsk)
+				#Check if above min order size
+				if ((tradesize*bittrexAsk)>0.0005001):
+					#Execute order
+					api.buylimit(market, tradesize, bittrexAsk)
+					orderNumber=conn.sell(pair, poloBid, tradesize)
+					print "Selling {0} {1} @ PoloBid @ {2} and Buying {3} {4} @ BittrexAsk @ {5}".format(tradesize, currency, poloBid, tradesize, currency, bittrexAsk)
 
 		time.sleep(period)
 
