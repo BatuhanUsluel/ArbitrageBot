@@ -92,7 +92,7 @@ def main(argv):
 					#Execute order
 					if not args.dryrun:
 						bittrexAPI.selllimit(market, tradesize, bittrexBid)
-						orderNumber=poloniexAPI.sell(pair, poloAsk, tradesize)
+						orderNumber=poloniexAPI.buy(pair, poloAsk, tradesize)
 					else:
 						print("Dryrun: skipping order")
 
