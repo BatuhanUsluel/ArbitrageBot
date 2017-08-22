@@ -95,6 +95,8 @@ def main(argv):
 						orderNumber=poloniexAPI.buy(pair, poloAsk, tradesize)
 					else:
 						print("Dryrun: skipping order")
+				else:
+					print("Order size not above min order size, no trade was executed"
 
 		#Sell to polo, Buy from Bittrex
 		elif(bittrexAsk<poloBid):
@@ -108,7 +110,7 @@ def main(argv):
 				#Find minimum order size
 				tradesize=min(sellbook, buybook)
 
-				#Setting order size incase balance not eough
+				#Setting order size incase balance not enough
 				if (poloniexBalance<tradesize):
 					tradesize=poloniexBalance
 
@@ -124,6 +126,8 @@ def main(argv):
 						orderNumber=poloniexAPI.sell(pair, poloBid, tradesize)
 					else:
 						print("Dryrun: skipping order")
+				else:
+					print("Order size not above min order size, no trade was executed"
 
 		time.sleep(period)
 
