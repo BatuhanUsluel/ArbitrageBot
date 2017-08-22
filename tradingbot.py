@@ -120,7 +120,7 @@ def main(argv):
 			trade(0, poloAsk, bittrexBid, bittrexTargetBalance, poloniexBaseBalance)
 		#Sell to polo, Buy from Bittrex
 		elif(bittrexAsk<poloBid):
-			trade(1, bittrexAsk, poloBid, bittrexBaseBalance, poloniexTargetBalance)
+			trade(1, bittrexAsk, poloBid, poloniexTargetBalance, bittrexBaseBalance)
 
 		time.sleep(period)
 
