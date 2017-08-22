@@ -13,43 +13,44 @@ def main(argv):
 	minArb=float(raw_input("Minimum Arbitrage %. Recomended to set above 100.5 as fees from both sides add up to 0.5%.	"))
 	trade = 'BTC'
 	tradePlaced = False
+	dryrun = False
 
 	#Bittrex API Keys
-	api = bittrex('APIKEY','APISECRET')
-
-	#Bittrex market
-	market= '{0}-{1}'.format(trade,currency)
-
-	#Polo market
-	pair= '{0}_{1}'.format(trade,currency)
+	bittrexAPI = bittrex('APIKEY','APISECRET')
 
 	#Polo API Keys
-	conn= poloniex('APIKEY','APISECRET')
+	poloniexAPI = poloniex('APIKEY','APISECRET')
+
+	#Bittrex market
+	market = '{0}-{1}'.format(trade,currency)
+
+	#Polo market
+	pair = '{0}_{1}'.format(trade,currency)
 
 	while True:
 
 		#Poloniex Prices
-		currentValues = conn.api_query("returnTicker")
+		currentValues = poloniexAPI.api_query("returnTicker")
 		poloBid = float(currentValues[pair]["highestBid"])
 		poloAsk = float(currentValues[pair]["lowestAsk"])
 		print "Bid @ Poloniex:	" + str(poloBid)
-		print "Ask @ Poloniex	" + str(poloAsk)
+		print "Ask @ Poloniex:	" + str(poloAsk)
 
 		#Bittrex Prices
-		summary=api.getmarketsummary(market)
+		summary=bittrexAPI.getmarketsummary(market)
 		bittrexAsk = summary[0]['Ask']
 		print "Ask @ Bittrex:	" + str(bittrexAsk)
 		bittrexBid = summary[0]['Bid']
 		print "Bid @ Bittrex:	" + str(bittrexBid)
 
 		#Balances for currency
-		bittrexBalance=api.getbalance(currency)
-		allpolobalance=conn.api_query('returnBalances')
+		bittrexBalance=bittrexAPI.getbalance(currency)
+		allpolobalance=poloniexAPI.api_query('returnBalances')
 		poloniexBalance=allpolobalance[currency]
 
 
 		#Balances for BTC
-		bittrexBTCBalance=api.getbalance("btc")
+		bittrexBTCBalance=bittrexAPI.getbalance("btc")
 		poloniexBTCBalance=allpolobalance["BTC"]
 
 		#Buy from Polo, Sell to Bittrex
@@ -58,8 +59,8 @@ def main(argv):
 			#Check if min arb is met
 			if ((arbitrage*100)>minArb):
 				print "Buy from poloAsk, sell to bittrexBid. Profit: " + str(arbitrage*100)
-				sellbook=conn.returnOrderBook(pair)["asks"][0][1]
-				buybook=api.getorderbook(market, "sell")[0]["Quantity"]
+				sellbook=poloniexAPI.returnOrderBook(pair)["asks"][0][1]
+				buybook=bittrexAPI.getorderbook(market, "sell")[0]["Quantity"]
 
 				#Find minimum order size
 				tradesize=min(sellbook, buybook)
@@ -74,8 +75,8 @@ def main(argv):
 				#Check if above min order size
 				if ((tradesize*bittrexBid)>0.0005001):
 					#Execute order
-					api.selllimit(market, tradesize, bittrexBid)
-					orderNumber=conn.sell(pair, poloAsk, tradesize)
+					bittrexAPI.selllimit(market, tradesize, bittrexBid)
+					orderNumber=poloniexAPI.sell(pair, poloAsk, tradesize)
 					print "Selling {0} {1} @ BittrexBid @ {2} and buying {3} {4} @ PoloAsk @ {5}".format(tradesize, currency, bittrexBid, tradesize, currency, poloAsk)
 
 		#Sell to polo, Buy from Bittrex
@@ -84,8 +85,8 @@ def main(argv):
 			#Check if min arb is met
 			if ((arbitrage*100)>minArb):
 				print "Buy from Bittrex Ask, sell to poloBid. Profit: " + str(arbitrage*100)
-				buybook=conn.returnOrderBook(pair)["bids"][0][1]
-				sellbook=api.getorderbook(market, "sell")[0]["Quantity"]
+				buybook=poloniexAPI.returnOrderBook(pair)["bids"][0][1]
+				sellbook=bittrexAPI.getorderbook(market, "sell")[0]["Quantity"]
 
 				#Find minimum order size
 				tradesize=min(sellbook, buybook)
@@ -100,8 +101,8 @@ def main(argv):
 				#Check if above min order size
 				if ((tradesize*bittrexAsk)>0.0005001):
 					#Execute order
-					api.buylimit(market, tradesize, bittrexAsk)
-					orderNumber=conn.sell(pair, poloBid, tradesize)
+					bittrexAPI.buylimit(market, tradesize, bittrexAsk)
+					orderNumber=poloniexAPI.sell(pair, poloBid, tradesize)
 					print "Selling {0} {1} @ PoloBid @ {2} and Buying {3} {4} @ BittrexAsk @ {5}".format(tradesize, currency, poloBid, tradesize, currency, bittrexAsk)
 
 		time.sleep(period)
