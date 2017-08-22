@@ -22,7 +22,7 @@ class poloniex:
                     if(isinstance(after['return'][x], dict)):
                         if('datetime' in after['return'][x] and 'timestamp' not in after['return'][x]):
                             after['return'][x]['timestamp'] = float(createTimeStamp(after['return'][x]['datetime']))
-                            
+
         return after
 
     def api_query(self, command, req={}):
