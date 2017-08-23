@@ -3,7 +3,8 @@
 
 Coded for python2.7+
 
-```usage: arbbot.py [-h] [-s SYMBOL] [-b BASESYMBOL] [-r RATE] [-i INTERVAL]
+```
+usage: arbbot.py [-h] [-s SYMBOL] [-b BASESYMBOL] [-r RATE] [-i INTERVAL]
                  [-l LOGFILE] [-d] [-v]
 
 Poloniex/Bittrex Arbitrage Bot
@@ -23,6 +24,7 @@ optional arguments:
   -l LOGFILE, --logfile LOGFILE
                         file to output log data to [default: arbbot.log]
   -d, --dryrun          simulates without trading (API keys not required)
-  -v, --verbose         enables extra console messages (for debugging)```
+  -v, --verbose         enables extra console messages (for debugging)
+```
 
 When finished the bot will check both markets for their bids and asks. If the bittrex bid is higher than the poloniex ask, it will buy from the ask on poloniex, and sell to the bid on bittrex to make a % of profit. Same goes for the opposite. The bot will also have to check the order sizes.
