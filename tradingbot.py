@@ -59,6 +59,10 @@ def main(argv):
 	bittrexAPI = bittrex(poloniexKey, poloniexSecret)
 	poloniexAPI = poloniex(bittrexKey, bittrexSecret)
 
+	def quit():
+		logger.info('KeyboardInterrupt, quitting!')
+		sys.exit()
+
 	# Trade Function
 	def trade(_buyExchange, _ask, _bid, _srcBalance, _buyBalance):
 		# _buyExchange:
@@ -75,6 +79,8 @@ def main(argv):
 			# Load Sellbook from Poloniex, Fail Gracefully
 			try:
 				sellbook = poloniexAPI.returnOrderBook(poloniexPair)["asks"][0][1]
+			except KeyboardInterrupt:
+				quit()
 			except:
 				logger.error('Failed to get Poloniex Asks for {}, skipping order attempt'.format(poloniexPair))
 				return
@@ -82,6 +88,8 @@ def main(argv):
 			# Load Buybook from Bittrex, Fail Gracefully
 			try:
 				buybook = bittrexAPI.getorderbook(bittrexPair, "buy")[0]["Quantity"]
+			except KeyboardInterrupt:
+				quit()
 			except:
 				logger.error('Failed to get Bittrex Asks for {}, skipping order attempt'.format(poloniexPair))
 				return
@@ -92,6 +100,8 @@ def main(argv):
 			# Load Buybook from Poloniex, Fail Gracefully
 			try:
 				buybook = poloniexAPI.returnOrderBook(poloniexPair)["bids"][0][1]
+			except KeyboardInterrupt:
+				quit()
 			except:
 				logger.error('Failed to get Bittrex Bids for {}, skipping order attempt'.format(poloniexPair))
 				return
@@ -99,6 +109,8 @@ def main(argv):
 			# Load Sellbook from Bittrex, Fail Gracefully
 			try:
 				sellbook = bittrexAPI.getorderbook(bittrexPair, "sell")[0]["Quantity"]
+			except KeyboardInterrupt:
+				quit()
 			except:
 				logger.error('Failed to get Bittrex Asks for {}, skipping order attempt'.format(poloniexPair))
 				return
@@ -136,6 +148,8 @@ def main(argv):
 		# Query Poloniex Prices
 		try:
 			currentValues = poloniexAPI.api_query("returnTicker")
+		except KeyboardInterrupt:
+			quit()
 		except:
 			logger.error('Failed to Query Poloniex API, Restarting Loop')
 			continue
@@ -144,6 +158,8 @@ def main(argv):
 		# Query Bittrex Prices
 		try:
 			summary=bittrexAPI.getmarketsummary(bittrexPair)
+		except KeyboardInterrupt:
+			quit()
 		except:
 			logger.error('Failed to Query Bittrex API, Restarting Loop')
 			continue
@@ -155,10 +171,29 @@ def main(argv):
 		# Get Balance Information, fake numbers if dryrun.
 		if not args.dryrun:
 			# Query Bittrex API
-			bittrexTargetBalance = bittrexAPI.getbalance(targetCurrency)
-			bittrexBaseBalance = bittrexAPI.getbalance(baseCurrency)
+			try:
+				bittrexTargetBalance = bittrexAPI.getbalance(targetCurrency)
+			except KeyboardInterrupt:
+				quit()
+			except:
+				logger.error('Failed to Query Bittrex for {} Balance, Restarting Loop'.format(targetCurrency))
+				continue
+			try:
+				bittrexBaseBalance = bittrexAPI.getbalance(baseCurrency)
+			except KeyboardInterrupt:
+				quit()
+			except:
+				logger.error('Failed to Query Bittrex for {} Balance, Restarting Loop'.format(baseCurrency))
+				continue
+
 			# Query Poloniex API
-			poloniexBalanceData = poloniexAPI.api_query('returnBalances')
+			try:
+				poloniexBalanceData = poloniexAPI.api_query('returnBalances')
+			except KeyboardInterrupt:
+				quit()
+			except:
+				logger.error('Failed to Query Poloniex for Balance Data, Restarting Loop'.format(baseCurrency))
+				continue
 			# Copy Poloniex Balance Variables
 			poloniexTargetBalance = poloniexBalanceData[targetCurrency]
 			poloniexBaseBalance = poloniexBalanceData[baseCurrency]
