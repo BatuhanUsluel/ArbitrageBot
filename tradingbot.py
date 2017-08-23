@@ -1,12 +1,33 @@
 #!/usr/bin/env python
 #Imports
-from bittrex import bittrex
-from time import sleep
+import logging
+import argparse
 import time
 import sys
 from poloniex import poloniex
-import argparse
+from bittrex import bittrex
 def main(argv):
+	programName = 'ArbBot'
+	logFilename = 'arbbot.log'
+
+	# create logger
+	logger = logging.getLogger(programName)
+	logger.setLevel(logging.DEBUG)
+	# create console handler and set level to debug
+	ch = logging.StreamHandler()
+	ch.setLevel(logging.DEBUG)
+	# create file handler and set level to debug
+	fh = logging.FileHandler(logFilename, mode='a', encoding=None, delay=False)
+	fh.setLevel(logging.DEBUG)
+	# create formatter
+	formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+	# add formatter to ch
+	ch.setFormatter(formatter)
+	fh.setFormatter(formatter)
+	# add ch to logger
+	logger.addHandler(ch)
+	logger.addHandler(fh)
+
 	# Setup Argument Parser
 	parser = argparse.ArgumentParser(description='Poloniex/Bittrex Arbitrage Bot')
 	parser.add_argument('-s', '--symbol', default='XMR', type=str, required=False, help='symbol of your target coin [default: XMR]')
@@ -21,9 +42,9 @@ def main(argv):
 	baseCurrency = 'BTC'
 
 	# Print Settings
-	print('Arb Pair: {}/{} | Rate: {} | Interval: {}'.format(baseCurrency, targetCurrency, args.rate, args.interval))
+	logger.info('Arb Pair: {}/{} | Rate: {} | Interval: {}'.format(baseCurrency, targetCurrency, args.rate, args.interval))
 	if args.dryrun:
-		print("Dryrun Mode Enabled (will not trade)")
+		logger.info("Dryrun Mode Enabled (will not trade)")
 
 	# Pair Strings for accessing API responses
 	bittrexPair = '{0}-{1}'.format(baseCurrency, targetCurrency)
@@ -55,7 +76,7 @@ def main(argv):
 			buybook = poloniexAPI.returnOrderBook(poloniexPair)["bids"][0][1]
 			sellbook = bittrexAPI.getorderbook(bittrexPair, "sell")[0]["Quantity"]
 
-		print('\nBuy from ' + buyExchangeString + ', sell to ' + sellExchangeString + '. Arbitrage Rate: ' + str(arbitrage) + '%')
+		logger.info('OPPORTUNITY: BUY @ ' + buyExchangeString + ' | SELL @ ' + sellExchangeString + ' | RATE: ' + str(arbitrage) + '%')
 
 		#Find minimum order size
 		tradesize = min(sellbook, buybook)
@@ -69,7 +90,7 @@ def main(argv):
 
 		#Check if above min order size
 		if ((tradesize*_bid)>0.0005001):
-			print("==Order {}==\nSELL: {}	| {} @ {:.8f} (Balance: {})\nBUY: {}	| {} @ {:.8f} (Balance: {})".format(bittrexPair, sellExchangeString, tradesize, _bid, _srcBalance, buyExchangeString, tradesize, _ask, _buyBalance))
+			logger.info("ORDER {}\nSELL: {}	| {} @ {:.8f} (Balance: {})\nBUY: {}	| {} @ {:.8f} (Balance: {})".format(bittrexPair, sellExchangeString, tradesize, _bid, _srcBalance, buyExchangeString, tradesize, _ask, _buyBalance))
 			#Execute order
 			if not args.dryrun:
 				if (_buyExchange == 0):
@@ -79,9 +100,9 @@ def main(argv):
 					bittrexAPI.buylimit(bittrexPair, tradesize, _ask)
 					orderNumber = poloniexAPI.sell(poloniexPair, _bid, tradesize)
 			else:
-				print("Dryrun: skipping order")
+				logger.info("Dryrun: skipping order")
 		else:
-			print("Order size not above min order size, no trade was executed")
+			logger.info("Order size not above min order size, no trade was executed")
 
 	# Main Loop
 	while True:
