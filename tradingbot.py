@@ -82,21 +82,18 @@ def main(argv):
 		else:
 			print("Order size not above min order size, no trade was executed")
 
+	# Main Loop
 	while True:
-
-		#Poloniex Prices
+		# Query Poloniex Prices
 		currentValues = poloniexAPI.api_query("returnTicker")
 		poloBid = float(currentValues[poloniexPair]["highestBid"])
 		poloAsk = float(currentValues[poloniexPair]["lowestAsk"])
-		print("Bid @ Poloniex:	" + str(poloBid))
-		print("Ask @ Poloniex:	" + str(poloAsk))
-
-		#Bittrex Prices
+		# Query Bittrex Prices
 		summary=bittrexAPI.getmarketsummary(bittrexPair)
 		bittrexAsk = summary[0]['Ask']
-		print("Ask @ Bittrex:	" + str(bittrexAsk))
 		bittrexBid = summary[0]['Bid']
-		print("Bid @ Bittrex:	" + str(bittrexBid))
+		# Print Prices
+		print('ASKS: Poloniex @ {:.8f} | {:.8f} @ Bitrex\nBIDS: Poloniex @ {:.8f} | {:.8f} @ Bitrex'.format(poloAsk, bittrexAsk, poloBid, bittrexBid))
 
 		# Get Balance Information, fake numbers if dryrun.
 		if not args.dryrun:
@@ -104,10 +101,10 @@ def main(argv):
 			bittrexTargetBalance = bittrexAPI.getbalance(targetCurrency)
 			bittrexBaseBalance = bittrexAPI.getbalance(baseCurrency)
 			# Query Poloniex API
-			allpolobalance = poloniexAPI.api_query('returnBalances')
+			poloniexBalanceData = poloniexAPI.api_query('returnBalances')
 			# Copy Poloniex Balance Variables
-			poloniexTargetBalance = allpolobalance[targetCurrency]
-			poloniexBaseBalance = allpolobalance[baseCurrency]
+			poloniexTargetBalance = poloniexBalanceData[targetCurrency]
+			poloniexBaseBalance = poloniexBalanceData[baseCurrency]
 		else:
 			# Faking Balance Numbers for Dryrun Simulation
 			bittrexTargetBalance=100.0
@@ -115,10 +112,10 @@ def main(argv):
 			poloniexTargetBalance=100.0
 			poloniexBaseBalance=100.0
 
-		#Buy from Polo, Sell to Bittrex
+		# Buy from Polo, Sell to Bittrex
 		if (poloAsk<bittrexBid):
 			trade(0, poloAsk, bittrexBid, bittrexTargetBalance, poloniexBaseBalance)
-		#Sell to polo, Buy from Bittrex
+		# Sell to polo, Buy from Bittrex
 		elif(bittrexAsk<poloBid):
 			trade(1, bittrexAsk, poloBid, poloniexTargetBalance, bittrexBaseBalance)
 
