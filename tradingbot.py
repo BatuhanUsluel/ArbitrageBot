@@ -69,7 +69,7 @@ def main(argv):
 
 		#Check if above min order size
 		if ((tradesize*_bid)>0.0005001):
-			print("==Order==\nSELL: {}	| {} @ {:.8f} (Balance: {})\nBUY: {}	| {} @ {:.8f} (Balance: {})".format(sellExchangeString, tradesize, _bid, _srcBalance, buyExchangeString, tradesize, _ask, _buyBalance))
+			print("==Order {}==\nSELL: {}	| {} @ {:.8f} (Balance: {})\nBUY: {}	| {} @ {:.8f} (Balance: {})".format(bittrexPair, sellExchangeString, tradesize, _bid, _srcBalance, buyExchangeString, tradesize, _ask, _buyBalance))
 			#Execute order
 			if not args.dryrun:
 				if (_buyExchange == 0):
