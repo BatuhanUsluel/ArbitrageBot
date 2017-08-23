@@ -17,7 +17,7 @@ def main(argv):
 	parser = argparse.ArgumentParser(description='Poloniex/Bittrex Arbitrage Bot')
 	parser.add_argument('-s', '--symbol', default='XMR', type=str, required=False, help='symbol of your target coin [default: XMR]')
 	parser.add_argument('-b', '--basesymbol', default='BTC', type=str, required=False, help='symbol of your base coin [default: BTC]')
-	parser.add_argument('-r', '--rate', default=1.0, type=float, required=False, help='minimum price difference [default: 1.0]')
+	parser.add_argument('-r', '--rate', default=1.1, type=float, required=False, help='minimum price difference [default: 1.1]')
 	parser.add_argument('-i', '--interval', default=1, type=int, required=False, help='seconds to sleep between loops [default: 1]')
 	parser.add_argument('-l', '--logfile', default='arbbot.log', type=str, required=False, help='file to output log data to [default: arbbot.log]')
 	parser.add_argument('-d', '--dryrun', action='store_true', required=False, help='simulates without trading (API keys not required)')
@@ -70,6 +70,7 @@ def main(argv):
 		# 1 = Bittrex
 		arbitrage = _bid/_ask
 		# Return if minumum arbitrage percentage is not met
+		print('DEBUG: Current Rate: {} | Minimum Rate: {}'.format(arbitrage, args.rate))
 		if (arbitrage <= args.rate):
 			return
 		elif (_buyExchange == 0):
@@ -208,7 +209,7 @@ def main(argv):
 		if (poloAsk<bittrexBid):
 			trade(0, poloAsk, bittrexBid, bittrexTargetBalance, poloniexBaseBalance)
 		# Sell to polo, Buy from Bittrex
-		elif(bittrexAsk<poloBid):
+		if(bittrexAsk<poloBid):
 			trade(1, bittrexAsk, poloBid, poloniexTargetBalance, bittrexBaseBalance)
 
 		time.sleep(args.interval)
