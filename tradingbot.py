@@ -55,7 +55,7 @@ def main(argv):
 			buybook = poloniexAPI.returnOrderBook(poloniexPair)["bids"][0][1]
 			sellbook = bittrexAPI.getorderbook(bittrexPair, "sell")[0]["Quantity"]
 
-		print('Buy from ' + buyExchangeString + ', sell to ' + sellExchangeString + '. Arbitrage Rate: ' + str(arbitrage) + '%')
+		print('\nBuy from ' + buyExchangeString + ', sell to ' + sellExchangeString + '. Arbitrage Rate: ' + str(arbitrage) + '%')
 
 		#Find minimum order size
 		tradesize = min(sellbook, buybook)
@@ -69,7 +69,7 @@ def main(argv):
 
 		#Check if above min order size
 		if ((tradesize*_bid)>0.0005001):
-			print("Selling {0} {1} @ {2} @ {3} and buying {4} {5} @ {6} @ {7}".format(tradesize, targetCurrency, sellExchangeString, _bid, tradesize, targetCurrency, buyExchangeString, _ask))
+			print("==Order==\nSELL: {}	| {} @ {:.8f} (Balance: {})\nBUY: {}	| {} @ {:.8f} (Balance: {})".format(sellExchangeString, tradesize, _bid, _srcBalance, buyExchangeString, tradesize, _ask, _buyBalance))
 			#Execute order
 			if not args.dryrun:
 				if (_buyExchange == 0):
