@@ -9,44 +9,39 @@ import argparse
 def main(argv):
 	# Setup Argument Parser
 	parser = argparse.ArgumentParser(description='Poloniex/Bittrex Arbitrage Bot')
+	parser.add_argument('-s', '--symbol', default='XMR', type=str, required=False, help='symbol of your target coin [default: XMR]')
+	parser.add_argument('-r', '--rate', default=1.0, type=float, required=False, help='minimum price difference [default: 1.0]')
+	parser.add_argument('-i', '--interval', default=1, type=int, required=False, help='seconds to sleep between loops [default: 1]')
 	parser.add_argument('-d', '--dryrun', action='store_true', required=False, help='simulates without trading (API keys not required)')
+	parser.add_argument('-v', '--verbose', action='store_true', required=False, help='enables extra console messages (for debugging)')
 	args = parser.parse_args()
 
+	# Settings
+	targetCurrency = args.symbol
+	baseCurrency = 'BTC'
+
+	# Print Settings
+	print('Arb Pair: {}/{} | Rate: {} | Interval: {}'.format(baseCurrency, targetCurrency, args.rate, args.interval))
 	if args.dryrun:
 		print("Dryrun Mode Enabled (will not trade)")
 
-	#Inputs and set variables
-	try:
-		period = float(raw_input("Period(Delay Between Each Check in seconds): "))
-		targetCurrency = raw_input("Coin (Example: ETH): ")
-		minArb = float(raw_input("Minimum Arbitrage % (Recomended to set above 100.5 as fees from both sides add up to 0.5%): "))
-	except NameError:
-		period = float(input("Period(Delay Between Each Check in seconds): "))
-		targetCurrency = input("Coin (Example: ETH): ")
-		minArb = float(input("Minimum Arbitrage % (Recomended to set above 100.5 as fees from both sides add up to 0.5%): "))
-
-	baseCurrency = 'BTC'
-	tradePlaced = False
+	# Pair Strings for accessing API responses
+	bittrexPair = '{0}-{1}'.format(baseCurrency, targetCurrency)
+	poloniexPair = '{0}_{1}'.format(baseCurrency, targetCurrency)
 
 	#Bittrex API Keys
 	bittrexAPI = bittrex('APIKEY','APISECRET')
-
 	#Polo API Keys
 	poloniexAPI = poloniex('APIKEY','APISECRET')
-
-	# Pair Strings for accessing API responses
-	bittrexPair = '{0}-{1}'.format(baseCurrency,targetCurrency)
-	poloniexPair = '{0}_{1}'.format(baseCurrency,targetCurrency)
 
 	# Trade Function
 	def trade(_buyExchange, _ask, _bid, _srcBalance, _buyBalance):
 		# _buyExchange:
 		# 0 = Poloniex
 		# 1 = Bittrex
-
-		arbitrage = (_bid/_ask) * 100
+		arbitrage = _bid/_ask
 		# Return minumum arbitrage percentage is not met
-		if ((arbitrage) <= minArb):
+		if (arbitrage <= args.rate):
 			return
 
 		if (_buyExchange == 0):
@@ -125,7 +120,7 @@ def main(argv):
 		elif(bittrexAsk<poloBid):
 			trade(1, bittrexAsk, poloBid, poloniexTargetBalance, bittrexBaseBalance)
 
-		time.sleep(period)
+		time.sleep(args.interval)
 
 
 if __name__ == "__main__":
