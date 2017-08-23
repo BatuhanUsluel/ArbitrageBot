@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 import urllib
-import urllib2
 import json
 import time
 import hmac
 import hashlib
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen, Request
+    from urllib.parse import urlencode
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen, Request
+    from urllib import urlencode
 
 class bittrex(object):
 
@@ -26,18 +33,18 @@ class bittrex(object):
         else:
             return 'Something went wrong, sorry.'
 
-        url += method + '?' + urllib.urlencode(values)
+        url += method + '?' + urlencode(values)
 
         if method not in self.public:
             url += '&apikey=' + self.key
             url += '&nonce=' + str(int(time.time()))
-            signature = hmac.new(self.secret, url, hashlib.sha512).hexdigest()
+            signature = hmac.new(b'self.secret', url, hashlib.sha512).hexdigest()
             headers = {'apisign': signature}
         else:
             headers = {}
 
-        req = urllib2.Request(url, headers=headers)
-        response = json.loads(urllib2.urlopen(req).read())
+        req = Request(url, headers=headers)
+        response = json.loads(urlopen(req).read())
 
         if response["result"]:
             return response["result"]
@@ -106,4 +113,4 @@ class bittrex(object):
         return self.query('getwithdrawalhistory', {'currency': currency, 'count': count})
 
     def getdeposithistory(self, currency, count):
-	return self.query('getdeposithistory', {'currency': currency, 'count': count})
+        return self.query('getdeposithistory', {'currency': currency, 'count': count})

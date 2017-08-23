@@ -16,9 +16,15 @@ def main(argv):
 		print("Dryrun Mode Enabled (will not trade)")
 
 	#Inputs and set variables
-	period = float(raw_input("Period(Delay Between Each Check in seconds): "))
-	targetCurrency = raw_input("Coin (Example: ETH): ")
-	minArb = float(raw_input("Minimum Arbitrage % (Recomended to set above 100.5 as fees from both sides add up to 0.5%): "))
+	try:
+		period = float(raw_input("Period(Delay Between Each Check in seconds): "))
+		targetCurrency = raw_input("Coin (Example: ETH): ")
+		minArb = float(raw_input("Minimum Arbitrage % (Recomended to set above 100.5 as fees from both sides add up to 0.5%): "))
+	except NameError:
+		period = float(input("Period(Delay Between Each Check in seconds): "))
+		targetCurrency = input("Coin (Example: ETH): ")
+		minArb = float(input("Minimum Arbitrage % (Recomended to set above 100.5 as fees from both sides add up to 0.5%): "))
+
 	baseCurrency = 'BTC'
 	tradePlaced = False
 
@@ -93,7 +99,7 @@ def main(argv):
 		bittrexAsk = summary[0]['Ask']
 		bittrexBid = summary[0]['Bid']
 		# Print Prices
-		print('ASKS: Poloniex @ {:.8f} | {:.8f} @ Bitrex\nBIDS: Poloniex @ {:.8f} | {:.8f} @ Bitrex'.format(poloAsk, bittrexAsk, poloBid, bittrexBid))
+		print('\nASKS: Poloniex @ {:.8f} | {:.8f} @ Bitrex\nBIDS: Poloniex @ {:.8f} | {:.8f} @ Bitrex'.format(poloAsk, bittrexAsk, poloBid, bittrexBid))
 
 		# Get Balance Information, fake numbers if dryrun.
 		if not args.dryrun:

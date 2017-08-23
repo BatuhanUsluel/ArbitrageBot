@@ -1,7 +1,7 @@
 # ArbitrageBot
 ![alt text](https://investorjunkie.com/wp-content/uploads/2011/02/arbitrage-cufflinks.gif)
 
-Coded for python2, untested with python3.
+Coded for python2.7+
 
 Input coin name(Example: ETH), Delay Between each check(in seconds), and the minimum arbitrage(101=1% Min Arb).
 
