@@ -71,13 +71,37 @@ def main(argv):
 		elif (_buyExchange == 0):
 			buyExchangeString = 'Poloniex'
 			sellExchangeString = 'Bittrex'
-			sellbook = poloniexAPI.returnOrderBook(poloniexPair)["asks"][0][1]
-			buybook = bittrexAPI.getorderbook(bittrexPair, "sell")[0]["Quantity"]
+
+			# Load Sellbook from Poloniex, Fail Gracefully
+			try:
+				sellbook = poloniexAPI.returnOrderBook(poloniexPair)["asks"][0][1]
+			except:
+				logger.error('Failed to get Poloniex Asks for {}, skipping order attempt'.format(poloniexPair))
+				return
+
+			# Load Buybook from Bittrex, Fail Gracefully
+			try:
+				buybook = bittrexAPI.getorderbook(bittrexPair, "buy")[0]["Quantity"]
+			except:
+				logger.error('Failed to get Bittrex Asks for {}, skipping order attempt'.format(poloniexPair))
+				return
 		elif (_buyExchange == 1):
 			buyExchangeString = 'Bittrex'
 			sellExchangeString = 'Poloniex'
-			buybook = poloniexAPI.returnOrderBook(poloniexPair)["bids"][0][1]
-			sellbook = bittrexAPI.getorderbook(bittrexPair, "sell")[0]["Quantity"]
+
+			# Load Buybook from Poloniex, Fail Gracefully
+			try:
+				buybook = poloniexAPI.returnOrderBook(poloniexPair)["bids"][0][1]
+			except:
+				logger.error('Failed to get Bittrex Bids for {}, skipping order attempt'.format(poloniexPair))
+				return
+
+			# Load Sellbook from Bittrex, Fail Gracefully
+			try:
+				sellbook = bittrexAPI.getorderbook(bittrexPair, "sell")[0]["Quantity"]
+			except:
+				logger.error('Failed to get Bittrex Asks for {}, skipping order attempt'.format(poloniexPair))
+				return
 
 		logger.info('OPPORTUNITY: BUY @ ' + buyExchangeString + ' | SELL @ ' + sellExchangeString + ' | RATE: ' + str(arbitrage) + '%')
 
@@ -110,11 +134,19 @@ def main(argv):
 	# Main Loop
 	while True:
 		# Query Poloniex Prices
-		currentValues = poloniexAPI.api_query("returnTicker")
+		try:
+			currentValues = poloniexAPI.api_query("returnTicker")
+		except:
+			logger.error('Failed to Query Poloniex API, Restarting Loop')
+			continue
 		poloBid = float(currentValues[poloniexPair]["highestBid"])
 		poloAsk = float(currentValues[poloniexPair]["lowestAsk"])
 		# Query Bittrex Prices
-		summary=bittrexAPI.getmarketsummary(bittrexPair)
+		try:
+			summary=bittrexAPI.getmarketsummary(bittrexPair)
+		except:
+			logger.error('Failed to Query Bittrex API, Restarting Loop')
+			continue
 		bittrexAsk = summary[0]['Ask']
 		bittrexBid = summary[0]['Bid']
 		# Print Prices
