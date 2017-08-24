@@ -131,7 +131,7 @@ def main(argv):
 			logger.info('Tradesize ({}) larger than buy balance ({} @ {}), lowering tradesize to {}.'.format(tradesize, _buyBalance, buyExchangeString, newTradesize))
 			tradesize = newTradesize
 
-		if args.max <= 0.0 and tradesize > args.max:
+		if args.max >= 0.0 and tradesize > args.max:
 			logger.debug('Tradesize ({}) larger than maximum ({}), lowering tradesize.'.format(tradesize, args.max))
 			tradesize = args.max
 
