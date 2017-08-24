@@ -18,6 +18,7 @@ def main(argv):
 	parser.add_argument('-s', '--symbol', default='XMR', type=str, required=False, help='symbol of your target coin [default: XMR]')
 	parser.add_argument('-b', '--basesymbol', default='BTC', type=str, required=False, help='symbol of your base coin [default: BTC]')
 	parser.add_argument('-r', '--rate', default=1.01, type=float, required=False, help='minimum price difference, 1.01 is 1 percent price difference (exchanges charge .05 percent fee) [default: 1.01]')
+	parser.add_argument('-m', '--max', default=0.0, type=float, required=False, help='maximum order size in target currency (0.0 is unlimited) [default: 0.0]')
 	parser.add_argument('-i', '--interval', default=1, type=int, required=False, help='seconds to sleep between loops [default: 1]')
 	parser.add_argument('-l', '--logfile', default='arbbot.log', type=str, required=False, help='file to output log data to [default: arbbot.log]')
 	parser.add_argument('-d', '--dryrun', action='store_true', required=False, help='simulates without trading (API keys not required)')
@@ -45,15 +46,14 @@ def main(argv):
 	# Load Configuration
 	targetCurrency = args.symbol
 	baseCurrency = args.basesymbol
-
-	# Log Startup Settings
-	logger.info('Arb Pair: {}/{} | Rate: {} | Interval: {}'.format(baseCurrency, targetCurrency, args.rate, args.interval))
-	if args.dryrun:
-		logger.info("Dryrun Mode Enabled (will not trade)")
-
 	# Pair Strings for accessing API responses
 	bittrexPair = '{0}-{1}'.format(baseCurrency, targetCurrency)
 	poloniexPair = '{0}_{1}'.format(baseCurrency, targetCurrency)
+
+	# Log Startup Settings
+	logger.info('Arb Pair: {} | Rate: {} | Interval: {} | Max Order Size: {}'.format(bittrexPair, args.rate, args.interval, args.max))
+	if args.dryrun:
+		logger.info("Dryrun Mode Enabled (will not trade)")
 
 	# Create Exchange API Objects
 	bittrexAPI = bittrex(poloniexKey, poloniexSecret)
@@ -64,16 +64,16 @@ def main(argv):
 		sys.exit()
 
 	# Trade Function
-	def trade(_buyExchange, _ask, _bid, _srcBalance, _buyBalance):
+	def trade(_buyExchange, _ask, _bid, _sellBalance, _buyBalance):
 		# _buyExchange:
 		# 0 = Poloniex
 		# 1 = Bittrex
 		arbitrage = _bid/_ask
 		# Return if minumum arbitrage percentage is not met
 		print('DEBUG: Current Rate: {} | Minimum Rate: {}'.format(arbitrage, args.rate))
-		if (arbitrage <= args.rate):
+		if arbitrage <= args.rate:
 			return
-		elif (_buyExchange == 0):
+		elif _buyExchange == 0:
 			buyExchangeString = 'Poloniex'
 			sellExchangeString = 'Bittrex'
 
@@ -94,7 +94,7 @@ def main(argv):
 			except:
 				logger.error('Failed to get Bittrex Asks for {}, skipping order attempt'.format(poloniexPair))
 				return
-		elif (_buyExchange == 1):
+		elif _buyExchange == 1:
 			buyExchangeString = 'Bittrex'
 			sellExchangeString = 'Poloniex'
 
@@ -122,21 +122,28 @@ def main(argv):
 		tradesize = min(sellbook, buybook)
 
 		#Setting order size incase balance not enough
-		if (_srcBalance < tradesize):
-			tradesize = _srcBalance
+		if _sellBalance < tradesize:
+			logger.info('Tradesize ({}) larger than sell balance ({} @ {}), lowering tradesize.'.format(tradesize, _sellBalance, sellExchangeString))
+			tradesize = _sellBalance
 
-		if ((tradesize*_ask) > _buyBalance):
-			tradesize = _buyBalance / _ask
+		if (tradesize*_ask) > _buyBalance:
+			newTradesize = _buyBalance / _ask
+			logger.info('Tradesize ({}) larger than buy balance ({} @ {}), lowering tradesize to {}.'.format(tradesize, _buyBalance, buyExchangeString, newTradesize))
+			tradesize = newTradesize
+
+		if args.max <= 0.0 and tradesize > args.max:
+			logger.debug('Tradesize ({}) larger than maximum ({}), lowering tradesize.'.format(tradesize, args.max))
+			tradesize = args.max
 
 		#Check if above min order size
-		if ((tradesize*_bid)>0.0005001):
-			logger.info("ORDER {}\nSELL: {}	| {} @ {:.8f} (Balance: {})\nBUY: {}	| {} @ {:.8f} (Balance: {})".format(bittrexPair, sellExchangeString, tradesize, _bid, _srcBalance, buyExchangeString, tradesize, _ask, _buyBalance))
+		if (tradesize*_bid) > 0.0005001:
+			logger.info("ORDER {}\nSELL: {}	| {} @ {:.8f} (Balance: {})\nBUY: {}	| {} @ {:.8f} (Balance: {})".format(bittrexPair, sellExchangeString, tradesize, _bid, _sellBalance, buyExchangeString, tradesize, _ask, _buyBalance))
 			#Execute order
 			if not args.dryrun:
-				if (_buyExchange == 0):
+				if _buyExchange == 0:
 					bittrexAPI.selllimit(bittrexPair, tradesize, _bid)
 					orderNumber = poloniexAPI.buy(poloniexPair, _ask, tradesize)
-				elif (_buyExchange == 1):
+				elif _buyExchange == 1:
 					bittrexAPI.buylimit(bittrexPair, tradesize, _ask)
 					orderNumber = poloniexAPI.sell(poloniexPair, _bid, tradesize)
 			else:
@@ -206,10 +213,10 @@ def main(argv):
 			poloniexBaseBalance=100.0
 
 		# Buy from Polo, Sell to Bittrex
-		if (poloAsk<bittrexBid):
+		if poloAsk < bittrexBid:
 			trade(0, poloAsk, bittrexBid, bittrexTargetBalance, poloniexBaseBalance)
 		# Sell to polo, Buy from Bittrex
-		if(bittrexAsk<poloBid):
+		if bittrexAsk < poloBid:
 			trade(1, bittrexAsk, poloBid, poloniexTargetBalance, bittrexBaseBalance)
 
 		time.sleep(args.interval)
