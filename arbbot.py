@@ -4,15 +4,16 @@ import logging
 import argparse
 import time
 import sys
+
 from poloniex import poloniex
 from bittrex import bittrex
+try:
+	# For Python 3.0 and later
+	from configparser import ConfigParser
+except ImportError:
+	# Fall back to Python 2's urllib2
+	from ConfigParser import ConfigParser
 def main(argv):
-	# User Settings
-	poloniexKey = 'POLONIEX_API_KEY'
-	poloniexSecret = 'POLONIEX_API_SECRET'
-	bittrexKey = 'BITTREX_API_KEY'
-	bittrexSecret = 'BITTREX_API_SECRET'
-
 	# Setup Argument Parser
 	parser = argparse.ArgumentParser(description='Poloniex/Bittrex Arbitrage Bot')
 	parser.add_argument('-s', '--symbol', default='XMR', type=str, required=False, help='symbol of your target coin [default: XMR]')
@@ -20,6 +21,7 @@ def main(argv):
 	parser.add_argument('-r', '--rate', default=1.01, type=float, required=False, help='minimum price difference, 1.01 is 1 percent price difference (exchanges charge .05 percent fee) [default: 1.01]')
 	parser.add_argument('-m', '--max', default=0.0, type=float, required=False, help='maximum order size in target currency (0.0 is unlimited) [default: 0.0]')
 	parser.add_argument('-i', '--interval', default=1, type=int, required=False, help='seconds to sleep between loops [default: 1]')
+	parser.add_argument('-c', '--config', default='arbbot.conf', type=str, required=False, help='config file [default: arbbot.conf]')
 	parser.add_argument('-l', '--logfile', default='arbbot.log', type=str, required=False, help='file to output log data to [default: arbbot.log]')
 	parser.add_argument('-d', '--dryrun', action='store_true', required=False, help='simulates without trading (API keys not required)')
 	parser.add_argument('-v', '--verbose', action='store_true', required=False, help='enables extra console messages (for debugging)')
@@ -42,6 +44,22 @@ def main(argv):
 	# Add handlers to logger
 	logger.addHandler(ch)
 	logger.addHandler(fh)
+
+	# Load Config File
+	config = ConfigParser()
+	try:
+		config.read(args.config)
+		poloniexKey = config.get('ArbBot', 'poloniexKey')
+		poloniexSecret = config.get('ArbBot', 'poloniexSecret')
+		bittrexKey = config.get('ArbBot', 'bittrexKey')
+		bittrexSecret = config.get('ArbBot', 'bittrexSecret')
+	except:
+		logger.warning('No Config File Found! Running in Drymode!')
+		args.dryrun = True
+		poloniexKey = 'POLONIEX_API_KEY'
+		poloniexSecret = 'POLONIEX_API_SECRET'
+		bittrexKey = 'BITTREX_API_KEY'
+		bittrexSecret = 'BITTREX_API_SECRET'
 
 	# Load Configuration
 	targetCurrency = args.symbol
