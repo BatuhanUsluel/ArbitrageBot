@@ -1,8 +1,14 @@
-import urllib
-import urllib2
 import json
 import time
 import hmac,hashlib
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen, Request
+    from urllib.parse import urlencode
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen, Request
+    from urllib import urlencode
 
 def createTimeStamp(datestr, format="%Y-%m-%d %H:%M:%S"):
     return time.mktime(time.strptime(datestr, format))
@@ -28,18 +34,18 @@ class poloniex:
     def api_query(self, command, req={}):
 
         if(command == "returnTicker" or command == "return24Volume"):
-            ret = urllib2.urlopen(urllib2.Request('https://poloniex.com/public?command=' + command))
+            ret = urlopen(Request('https://poloniex.com/public?command=' + command))
             return json.loads(ret.read())
         elif(command == "returnOrderBook"):
-            ret = urllib2.urlopen(urllib2.Request('https://poloniex.com/public?command=' + command + '&currencyPair=' + str(req['currencyPair'])))
+            ret = urlopen(Request('https://poloniex.com/public?command=' + command + '&currencyPair=' + str(req['currencyPair'])))
             return json.loads(ret.read())
         elif(command == "returnMarketTradeHistory"):
-            ret = urllib2.urlopen(urllib2.Request('https://poloniex.com/public?command=' + "returnTradeHistory" + '&currencyPair=' + str(req['currencyPair'])))
+            ret = urlopen(Request('https://poloniex.com/public?command=' + "returnTradeHistory" + '&currencyPair=' + str(req['currencyPair'])))
             return json.loads(ret.read())
         else:
             req['command'] = command
             req['nonce'] = int(time.time()*1000)
-            post_data = urllib.urlencode(req)
+            post_data = urlencode(req)
 
             sign = hmac.new(self.Secret, post_data, hashlib.sha512).hexdigest()
             headers = {
@@ -47,7 +53,7 @@ class poloniex:
                 'Key': self.APIKey
             }
 
-            ret = urllib2.urlopen(urllib2.Request('https://poloniex.com/tradingApi', post_data, headers))
+            ret = urlopen(Request('https://poloniex.com/tradingApi', post_data, headers))
             jsonRet = json.loads(ret.read())
             return self.post_process(jsonRet)
 
