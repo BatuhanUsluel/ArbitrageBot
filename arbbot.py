@@ -8,11 +8,11 @@ import sys
 from poloniex import poloniex
 from bittrex import bittrex
 try:
-	# For Python 3.0 and later
-	from configparser import ConfigParser
+	# For Python 3+
+	from configparser import ConfigParser, NoSectionError
 except ImportError:
-	# Fall back to Python 2's urllib2
-	from ConfigParser import ConfigParser
+	# Fallback to Python 2.7
+	from ConfigParser import ConfigParser, NoSectionError
 def main(argv):
 	# Setup Argument Parser
 	parser = argparse.ArgumentParser(description='Poloniex/Bittrex Arbitrage Bot')
@@ -26,6 +26,13 @@ def main(argv):
 	parser.add_argument('-d', '--dryrun', action='store_true', required=False, help='simulates without trading (API keys not required)')
 	parser.add_argument('-v', '--verbose', action='store_true', required=False, help='enables extra console messages (for debugging)')
 	args = parser.parse_args()
+
+	# Load Configuration
+	targetCurrency = args.symbol
+	baseCurrency = args.basesymbol
+	# Pair Strings for accessing API responses
+	bittrexPair = '{0}-{1}'.format(baseCurrency, targetCurrency)
+	poloniexPair = '{0}_{1}'.format(baseCurrency, targetCurrency)
 
 	# Create Logger
 	logger = logging.getLogger()
@@ -53,20 +60,23 @@ def main(argv):
 		poloniexSecret = config.get('ArbBot', 'poloniexSecret')
 		bittrexKey = config.get('ArbBot', 'bittrexKey')
 		bittrexSecret = config.get('ArbBot', 'bittrexSecret')
-	except:
+	except NoSectionError:
 		logger.warning('No Config File Found! Running in Drymode!')
 		args.dryrun = True
 		poloniexKey = 'POLONIEX_API_KEY'
 		poloniexSecret = 'POLONIEX_API_SECRET'
 		bittrexKey = 'BITTREX_API_KEY'
 		bittrexSecret = 'BITTREX_API_SECRET'
-
-	# Load Configuration
-	targetCurrency = args.symbol
-	baseCurrency = args.basesymbol
-	# Pair Strings for accessing API responses
-	bittrexPair = '{0}-{1}'.format(baseCurrency, targetCurrency)
-	poloniexPair = '{0}_{1}'.format(baseCurrency, targetCurrency)
+		config.add_section('ArbBot')
+		config.set('ArbBot', 'poloniexKey', poloniexKey)
+		config.set('ArbBot', 'poloniexSecret', poloniexSecret)
+		config.set('ArbBot', 'bittrexKey', bittrexKey)
+		config.set('ArbBot', 'bittrexSecret', bittrexSecret)
+		try:
+			with open(args.config, 'w') as configfile:
+				config.write(configfile)
+		except IOError:
+			logger.error('Failed to create and/or write to {}'.format(args.config))
 
 	# Log Startup Settings
 	logger.info('Arb Pair: {} | Rate: {} | Interval: {} | Max Order Size: {}'.format(bittrexPair, args.rate, args.interval, args.max))
