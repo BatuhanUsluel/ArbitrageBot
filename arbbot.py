@@ -4,15 +4,16 @@ import logging
 import argparse
 import time
 import sys
+
 from poloniex import poloniex
 from bittrex import bittrex
+try:
+	# For Python 3+
+	from configparser import ConfigParser, NoSectionError
+except ImportError:
+	# Fallback to Python 2.7
+	from ConfigParser import ConfigParser, NoSectionError
 def main(argv):
-	# User Settings
-	poloniexKey = 'POLONIEX_API_KEY'
-	poloniexSecret = 'POLONIEX_API_SECRET'
-	bittrexKey = 'BITTREX_API_KEY'
-	bittrexSecret = 'BITTREX_API_SECRET'
-
 	# Setup Argument Parser
 	parser = argparse.ArgumentParser(description='Poloniex/Bittrex Arbitrage Bot')
 	parser.add_argument('-s', '--symbol', default='XMR', type=str, required=False, help='symbol of your target coin [default: XMR]')
@@ -20,10 +21,18 @@ def main(argv):
 	parser.add_argument('-r', '--rate', default=1.01, type=float, required=False, help='minimum price difference, 1.01 is 1 percent price difference (exchanges charge .05 percent fee) [default: 1.01]')
 	parser.add_argument('-m', '--max', default=0.0, type=float, required=False, help='maximum order size in target currency (0.0 is unlimited) [default: 0.0]')
 	parser.add_argument('-i', '--interval', default=1, type=int, required=False, help='seconds to sleep between loops [default: 1]')
+	parser.add_argument('-c', '--config', default='arbbot.conf', type=str, required=False, help='config file [default: arbbot.conf]')
 	parser.add_argument('-l', '--logfile', default='arbbot.log', type=str, required=False, help='file to output log data to [default: arbbot.log]')
 	parser.add_argument('-d', '--dryrun', action='store_true', required=False, help='simulates without trading (API keys not required)')
 	parser.add_argument('-v', '--verbose', action='store_true', required=False, help='enables extra console messages (for debugging)')
 	args = parser.parse_args()
+
+	# Load Configuration
+	targetCurrency = args.symbol
+	baseCurrency = args.basesymbol
+	# Pair Strings for accessing API responses
+	bittrexPair = '{0}-{1}'.format(baseCurrency, targetCurrency)
+	poloniexPair = '{0}_{1}'.format(baseCurrency, targetCurrency)
 
 	# Create Logger
 	logger = logging.getLogger()
@@ -43,12 +52,31 @@ def main(argv):
 	logger.addHandler(ch)
 	logger.addHandler(fh)
 
-	# Load Configuration
-	targetCurrency = args.symbol
-	baseCurrency = args.basesymbol
-	# Pair Strings for accessing API responses
-	bittrexPair = '{0}-{1}'.format(baseCurrency, targetCurrency)
-	poloniexPair = '{0}_{1}'.format(baseCurrency, targetCurrency)
+	# Load Config File
+	config = ConfigParser()
+	try:
+		config.read(args.config)
+		poloniexKey = config.get('ArbBot', 'poloniexKey')
+		poloniexSecret = config.get('ArbBot', 'poloniexSecret')
+		bittrexKey = config.get('ArbBot', 'bittrexKey')
+		bittrexSecret = config.get('ArbBot', 'bittrexSecret')
+	except NoSectionError:
+		logger.warning('No Config File Found! Running in Drymode!')
+		args.dryrun = True
+		poloniexKey = 'POLONIEX_API_KEY'
+		poloniexSecret = 'POLONIEX_API_SECRET'
+		bittrexKey = 'BITTREX_API_KEY'
+		bittrexSecret = 'BITTREX_API_SECRET'
+		config.add_section('ArbBot')
+		config.set('ArbBot', 'poloniexKey', poloniexKey)
+		config.set('ArbBot', 'poloniexSecret', poloniexSecret)
+		config.set('ArbBot', 'bittrexKey', bittrexKey)
+		config.set('ArbBot', 'bittrexSecret', bittrexSecret)
+		try:
+			with open(args.config, 'w') as configfile:
+				config.write(configfile)
+		except IOError:
+			logger.error('Failed to create and/or write to {}'.format(args.config))
 
 	# Log Startup Settings
 	logger.info('Arb Pair: {} | Rate: {} | Interval: {} | Max Order Size: {}'.format(bittrexPair, args.rate, args.interval, args.max))
@@ -131,7 +159,7 @@ def main(argv):
 			logger.info('Tradesize ({}) larger than buy balance ({} @ {}), lowering tradesize to {}.'.format(tradesize, _buyBalance, buyExchangeString, newTradesize))
 			tradesize = newTradesize
 
-		if args.max <= 0.0 and tradesize > args.max:
+		if args.max >= 0.0 and tradesize > args.max:
 			logger.debug('Tradesize ({}) larger than maximum ({}), lowering tradesize.'.format(tradesize, args.max))
 			tradesize = args.max
 
