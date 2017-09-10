@@ -86,8 +86,6 @@ def main(argv):
 	# Create Exchange API Objects
 	bittrexAPI = bittrex(bittrexKey, bittrexSecret)
 	poloniexAPI = poloniex(poloniexKey, poloniexSecret)
-	print (bittrexAPI.getbalance(targetCurrency))
-	print (poloniexAPI.api_query('returnBalances'))
 	def quit():
 		logger.info('KeyboardInterrupt, quitting!')
 		sys.exit()
