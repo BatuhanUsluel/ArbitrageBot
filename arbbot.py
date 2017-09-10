@@ -84,9 +84,10 @@ def main(argv):
 		logger.info("Dryrun Mode Enabled (will not trade)")
 
 	# Create Exchange API Objects
-	bittrexAPI = bittrex(poloniexKey, poloniexSecret)
-	poloniexAPI = poloniex(bittrexKey, bittrexSecret)
-
+	bittrexAPI = bittrex(bittrexKey, bittrexSecret)
+	poloniexAPI = poloniex(poloniexKey, poloniexSecret)
+	print (bittrexAPI.getbalance(targetCurrency))
+	print (poloniexAPI.api_query('returnBalances'))
 	def quit():
 		logger.info('KeyboardInterrupt, quitting!')
 		sys.exit()
@@ -230,6 +231,7 @@ def main(argv):
 			except:
 				logger.error('Failed to Query Poloniex for Balance Data, Restarting Loop'.format(baseCurrency))
 				continue
+			
 			# Copy Poloniex Balance Variables
 			poloniexTargetBalance = poloniexBalanceData[targetCurrency]
 			poloniexBaseBalance = poloniexBalanceData[baseCurrency]
